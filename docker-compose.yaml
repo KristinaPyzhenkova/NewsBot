@@ -1,0 +1,107 @@
+version: '3.7'
+networks:
+  news-bot:
+    external: true
+
+services:
+  web:
+    container_name: news_web
+    restart: always
+    image: 1.0.0
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    command: sh -c "while ! nc -z db 5432; do sleep 1; done; python3 manage.py migrate; python3 manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - media_volume:/app/mediafiles
+      - shared_aiotdlib:/app/.aiotdlib  # Общий том для .aiotdlib
+      - shared_logs:/app/logs  # Общий том для файлов логов
+      - ./app/logs:/app/logs #дублирование на локальный комп
+      - ./app/.aiotdlib:/app/.aiotdlib #дублирование на локальный комп
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - news-bot
+    ports:
+      - '8000:8000'
+
+  db:
+    container_name: news_db
+    image: postgres:14.2-alpine
+    volumes:
+      - ../news-dev-db/db/:/var/lib/postgresql/data/
+    env_file:
+      - .env.db
+    networks:
+      - news-bot
+
+  bot:
+    build: ./app
+    container_name: news_bot
+    command: bash -c "python3 manage.py bot"
+    depends_on:
+      - web
+      - db
+    networks:
+      - news-bot
+    volumes:
+      - shared_logs:/app/logs  # Общий том для файлов логов
+      - ./app/logs:/app/logs
+    env_file:
+      - .env
+
+  redis:
+    container_name: news_redis
+    command: sh -c 'exec redis-server'
+    restart: always
+    image: redis:alpine
+    volumes:
+      - ../app:/var/lib/redis/data/
+    networks:
+      - news-bot
+
+  celery_worker:
+    build: ./app
+    command: celery -A app worker --concurrency=$CELERY_WORKER_CONCURRENCY -l info
+    volumes:
+      - shared_logs:/app/logs  # Общий том для файлов логов
+      - ./app/logs:/app/logs
+    container_name: news_celery_worker
+    depends_on:
+      - web
+      - bot
+      - redis
+    image: python:3.8
+    restart: on-failure
+    env_file:
+      - .env
+    networks:
+      - news-bot
+
+  celery_beat:
+    build: ./app
+    command: celery -A app beat -l info -S django
+    volumes:
+      - shared_logs:/app/logs  # Общий том для файлов логов
+      - ./app/logs:/app/logs
+    container_name: news_celery_beat
+    depends_on:
+      - web
+      - bot
+      - redis
+    restart: on-failure
+    env_file:
+      - .env
+    networks:
+      - news-bot
+
+volumes:
+  shared_aiotdlib:
+  shared_logs:
+  postgres_data: null
+  static_volume: null
+  media_volume: null
