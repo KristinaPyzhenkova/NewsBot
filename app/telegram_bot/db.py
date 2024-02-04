@@ -83,3 +83,12 @@ class BotDB:
             return updated_message, created
         except Exception as e:
             logger.error(f'{e}')
+
+    @staticmethod
+    def get_currencies() -> QuerySet[models.Currency]:
+        """Получаем валюты."""
+        try:
+            currencies = models.Currency.objects.all()
+            return currencies
+        except Exception as e:
+            logger.error(f'{e}')

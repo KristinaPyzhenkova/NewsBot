@@ -8,7 +8,7 @@ from telegram_bot.helpers import get_or_create_then_update_task
 
 
 def timing_message():
-    schedule = IntervalSchedule.objects.get_or_create(every=5, period=IntervalSchedule.MINUTES)[0]
+    schedule = IntervalSchedule.objects.get_or_create(every=30, period=IntervalSchedule.MINUTES)[0]
     task_name = f'timing_message_tasks'
     task = get_or_create_then_update_task(
         name=f'{task_name}',

@@ -108,3 +108,27 @@ class Message(CommonFields):
     class Meta:
         verbose_name = 'Сообщение'
         verbose_name_plural = 'Сообщения'
+
+
+class Currency(CommonFields):
+    USD = 'доллар'
+    CNY = 'юань'
+    EUR = 'евро'
+    BTC = 'BTC'
+    ETH = 'ETH'
+    CURRENCY_NAME = (
+        (USD, USD),
+        (EUR, EUR),
+        (CNY, CNY),
+        (BTC, BTC),
+        (ETH, ETH),
+    )
+    CUR = 'currency'
+    CRYPTO = 'crypto'
+    EXCHANGE = (
+        (CUR, CUR),
+        (CRYPTO, CRYPTO),
+    )
+    name = models.CharField(choices=CURRENCY_NAME, default=USD, max_length=12, null=True, blank=True)
+    value = models.FloatField(null=True, blank=True)
+    exchange = models.CharField(choices=EXCHANGE, default=CUR, max_length=12, null=True, blank=True)

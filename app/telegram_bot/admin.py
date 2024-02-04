@@ -38,3 +38,13 @@ class ChannelAdmin(admin.ModelAdmin):
         'chat_id', 'supergroup_id',
     )
     search_fields = ['title', 'chat_id']
+
+
+@admin.register(models.Currency)
+class CurrencyAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'name', 'value',
+        'exchange', 'modified',
+    )
+    search_fields = ['name']

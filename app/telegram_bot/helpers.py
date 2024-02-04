@@ -4,10 +4,13 @@ import re
 from typing import Optional, Union, List, Any
 from functools import wraps
 import traceback
+import requests
 
 from django.urls import reverse
 from django.utils.html import format_html
 from django_celery_beat.models import IntervalSchedule, PeriodicTask
+from bs4 import BeautifulSoup
+from tradingview_ta import TA_Handler, Interval, Exchange
 
 from telegram_bot import const, bot
 
@@ -143,3 +146,21 @@ def get_or_create_then_update_task(
         )
 
     return periodic_task
+
+
+def get_currency_rate(cur: str) -> float:
+    url = const.url_currency.format(cur)
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "html.parser")
+    result = soup.find("div", class_="BNeawe iBp4i AP7Wnd").get_text().split()
+    return float(result[0].replace(",", "."))
+
+
+def get_crypto_currency_rate(cur: str) -> float:
+    tesla = TA_Handler(
+        symbol=f"{cur}USDT",
+        screener="Crypto",
+        exchange="Binance",
+        interval=Interval.INTERVAL_5_MINUTES
+    )
+    return tesla.get_analysis().indicators['close']

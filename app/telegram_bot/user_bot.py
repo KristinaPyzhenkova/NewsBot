@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import datetime
 
 from telegram_bot import db, models, aiotdlib_client
 from telegram_bot.aiotdlib_helpers import (
@@ -7,7 +8,10 @@ from telegram_bot.aiotdlib_helpers import (
     process_messages, get_chat,
     process_chats
 )
-from telegram_bot.helpers import send_long_msg, handle_exceptions_async
+from telegram_bot.helpers import (
+    send_long_msg, handle_exceptions_async,
+    get_currency_rate, get_crypto_currency_rate,
+)
 
 logger = logging.getLogger('main')
 BotDB = db.BotDB()
@@ -38,8 +42,36 @@ async def get_updates_handle():
     check_messages, largest_value_date = await process_messages(messages_list)
     if not len(check_messages):
         return
-    for check_message in check_messages['text']:
-        await send_long_msg(check_message)
+    res = '\n'.join(check_messages['text'])
+    await send_long_msg(res)
     last_updated_at = models.Setting.objects.get(name='last_updated_at')
     last_updated_at.number = largest_value_date
     last_updated_at.save()
+
+
+@handle_exceptions_async(log_to_telegram=True, reraise_exception=False)
+async def get_currency_handle():
+    currencies = BotDB.get_currencies()
+    list_res = []
+    cur_time = datetime.datetime.now()
+    for cur in currencies:
+        if cur.exchange == models.Currency.CUR:
+            res = get_currency_rate(cur.name)
+            title_name = cur.name.title()
+        if cur.exchange == models.Currency.CRYPTO:
+            res = get_crypto_currency_rate(cur.name)
+            title_name = cur.name
+        logger.info(f'{res =} {cur.name = }')
+        percent_change = ((res - cur.value) / cur.value) * 100
+        if cur_time.hour == 7 and cur_time.minute < 10:
+            cur.value = res
+            cur.save()
+            list_res.append(f'\n{cur.name}: ₽{res}')
+        elif percent_change > 5:
+            arrow = '↑' if res > cur.value else '↓'
+            cur.value = res
+            cur.save()
+            list_res.append(f'\n<b>{title_name}</b>: ₽{res} ({percent_change:.2f}% {arrow})')
+    if not len(list_res):
+        return
+    await send_long_msg('<b>Курсы:</b>' + ''.join(list_res))
