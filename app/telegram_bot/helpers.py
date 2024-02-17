@@ -86,8 +86,9 @@ def remove_hashtags_and_smileys(text: str) -> str:
         '',
         text_without_hashtags
     )
-    text_without_smileys = re.sub(r'️', ' ', text_without_smileys)
-    return text_without_smileys.strip()
+    text_without_links = re.sub(const.re_links, '', text_without_smileys)
+    text_without_links = re.sub(r'️', ' ', text_without_links)
+    return text_without_links.strip()
 
 
 def short_text(attribute, url_attr_name=None):

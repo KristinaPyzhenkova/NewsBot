@@ -42,7 +42,7 @@ async def get_updates_handle():
     check_messages, largest_value_date = await process_messages(messages_list)
     if not len(check_messages):
         return
-    res = '\n'.join(check_messages['text'])
+    res = '\n\n'.join(check_messages['text'])
     await send_long_msg(res)
     last_updated_at = models.Setting.objects.get(name='last_updated_at')
     last_updated_at.number = largest_value_date
