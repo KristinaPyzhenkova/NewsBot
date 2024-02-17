@@ -11,7 +11,7 @@ DEBUG = int(os.getenv("DEBUG", 0))
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1 localhost db web").split(" ")
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
-SITE_DOMAIN = None
+SITE_DOMAIN = os.getenv("SITE_DOMAIN", None)
 
 CSRF_TRUSTED_ORIGINS = [
    'http://127.0.0.1:8000',
