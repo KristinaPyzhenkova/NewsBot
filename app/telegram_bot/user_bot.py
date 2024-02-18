@@ -67,7 +67,7 @@ async def get_currency_handle():
             cur.value = res
             cur.save()
             list_res.append(f'\n{cur.name}: ₽{res}')
-        elif 5 < percent_change or  percent_change < -5:
+        elif 5 < percent_change or percent_change < -5:
             arrow = '↑' if res > cur.value else '↓'
             cur.value = res
             cur.save()
